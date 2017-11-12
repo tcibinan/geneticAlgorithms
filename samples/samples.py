@@ -1,6 +1,6 @@
 from math import exp, log
 
-from utils import approximate, float_range, min, max, inflection_point, zero
+from utils import approximate, float_range, min, max, inflection_point, zero, generate_word
 
 a = 4
 b = 5
@@ -22,14 +22,14 @@ approximate(
     generations=50)
 
 min(
-    func=lambda x: (x-0.8)**2 + 4,
+    func=lambda x: (x - 0.8) ** 2 + 4,
     search_region=(-2.0, 2.0,),
     population_size=300,
     generations=50
 )
 
 max(
-    func=lambda x: 1.0/x,
+    func=lambda x: 1.0 / x,
     search_region=(-4.0, -0.0,),
     population_size=300,
     generations=50
@@ -49,3 +49,14 @@ zero(
     generations=50
 )
 
+generate_word(
+    list('МИР'),
+    letters=list('АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'),
+    population_size=40
+)
+
+generate_word(
+    [96, 96, 159],
+    letters=list(range(0, 256)),
+    population_size=40
+)

@@ -1,4 +1,6 @@
 import random
+from functools import reduce
+
 import numpy as np
 
 from deap import base, creator, tools, algorithms
@@ -115,6 +117,76 @@ def geneticAlgorithmWithEvalFunctional(base_func, eval_func, search_region, popu
     base_range = float_range(*search_region)
     plot(base_range, [base_func(x) for x in base_range], 'r')
     show()
+
+
+def generate_word(word, letters, population_size):
+    creator.create("Fitness", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", list, fitness=creator.Fitness)
+
+    toolbox = base.Toolbox()
+
+    toolbox.register("attr_bool", generate_letter, letters=letters)
+    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=len(word))
+    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+    toolbox.register("evaluate", evaluate_alphabet_distance, word=word, alphabet=letters)
+    toolbox.register("mate", tools.cxTwoPoint)
+    toolbox.register("mutate", mutInAlphabet, letters=letters, max_step=3, indpb=0.05)
+    toolbox.register("select", tools.selTournament, tournsize=3)
+
+    population = toolbox.population(n=population_size)
+
+    generation = 0
+    while have_not_found_yet(population, generation, word):
+        offspring = algorithms.varAnd(population, toolbox, cxpb=0.5, mutpb=0.1)
+        fits = toolbox.map(toolbox.evaluate, offspring)
+        for fit, ind in zip(fits, offspring):
+            ind.fitness.values = fit
+        population = toolbox.select(offspring, k=len(population))
+        generation += 1
+        if generation % 100 == 0:
+            print(generation)
+
+    print(generation)
+    print(tools.selBest(population, k=1)[0])
+
+
+def have_not_found_yet(population, generation, word):
+    found = False
+    if (generation != 0):
+        for idx, letter in enumerate(tools.selBest(population, k=1)[0]):
+            if (letter != word[idx]):
+                found = True
+    else:
+        found = True
+    return found
+
+
+def mutInAlphabet(individual, letters, max_step, indpb):
+    letter_index_in_word = random.randint(0, len(individual) - 1)
+    letter_index_in_alphabet = letters.index(individual[letter_index_in_word])
+    step = random.randint(0, max_step)
+
+    if random.random() < indpb:
+        if random.random() > 0.5:
+            if letter_index_in_alphabet + step < len(letters):
+                individual[letter_index_in_word] = letters[letter_index_in_alphabet + step]
+        else:
+            if letter_index_in_alphabet - step >= 0:
+                individual[letter_index_in_word] = letters[letter_index_in_alphabet - step]
+
+    return individual,
+
+
+def evaluate_alphabet_distance(individual, word, alphabet):
+    score = 0
+    for idx, letter in enumerate(individual):
+        score += abs(alphabet.index(word[idx]) - alphabet.index(letter))
+    return score,
+
+
+def generate_letter(letters):
+    return letters[random.randint(0, 25)]
 
 
 def evaluate_diff(individual, func, step):
